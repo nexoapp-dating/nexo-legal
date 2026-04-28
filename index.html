@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexo — Conexiones que importan</title>
+  <meta name="description" content="La app de citas que prioriza conexiones reales. Test de compatibilidad, matches semanales y conversaciones con propósito.">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0D1117;
+      --surface: #111820;
+      --border: #1a2330;
+      --gold: #C9A84C;
+      --gold-glow: rgba(201,168,76,0.12);
+      --gold-dim: rgba(201,168,76,0.3);
+      --text: #F5F0E8;
+      --muted: #8A8A7A;
+      --subtle: #3a3a2e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.4;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to bottom, rgba(13,17,23,0.95), transparent);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      text-decoration: none;
+    }
+
+    .nav-cta {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--gold);
+      padding: 10px 24px;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      height: 80px;
+      background: linear-gradient(to bottom, var(--gold-dim), transparent);
+    }
+
+    /* radial glow behind headline */
+    .hero-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.2s;
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.5rem, 9vw, 7rem);
+      font-weight: 300;
+      line-height: 1.0;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 32px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.4s;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 420px;
+      line-height: 1.75;
+      margin-bottom: 56px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.6s;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.8s;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--gold);
+      color: var(--bg);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-secondary:hover { border-color: var(--gold-dim); color: var(--text); }
+
+    /* ── PHONE MOCKUP ── */
+    .mockup-section {
+      padding: 80px 24px 120px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mockup-section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+    }
+
+    .phone {
+      width: 200px;
+      height: 400px;
+      border-radius: 28px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.4);
+    }
+
+    .phone:nth-child(2) {
+      transform: translateY(-24px);
+      border-color: var(--gold-dim);
+      box-shadow: 0 32px 64px rgba(0,0,0,0.4), 0 0 40px rgba(201,168,76,0.06);
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    /* phone screen content */
+    .phone-screen {
+      padding: 36px 16px 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-header {
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .phone-card {
+      flex: 1;
+      border-radius: 16px;
+      background: linear-gradient(160deg, #1a2330 0%, #111820 100%);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-avatar {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      opacity: 0.15;
+    }
+
+    .phone-compat {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+
+    .phone-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .phone-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .phone-btn {
+      flex: 1;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .phone-btn.gold { background: var(--gold-glow); border-color: var(--gold-dim); }
+
+    /* phone 2 — chat */
+    .chat-bubble {
+      margin-bottom: 6px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 0.5rem;
+      line-height: 1.4;
+      max-width: 80%;
+      color: var(--text);
+    }
+
+    .chat-bubble.them {
+      background: var(--border);
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }
+
+    .chat-bubble.me {
+      background: var(--gold-glow);
+      border: 1px solid var(--gold-dim);
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }
+
+    /* ── DIFFERENTIATORS ── */
+    .features {
+      padding: 100px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-eyebrow {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 72px;
+      max-width: 560px;
+    }
+
+    .section-title em { font-style: italic; color: var(--gold); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .feature {
+      background: var(--bg);
+      padding: 48px 40px;
+      transition: background 0.3s;
+    }
+
+    .feature:hover { background: var(--surface); }
+
+    .feature-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      margin-bottom: 24px;
+    }
+
+    .feature-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+
+    .feature-body {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    /* ── MANIFESTO ── */
+    .manifesto {
+      padding: 120px 48px;
+      text-align: center;
+      position: relative;
+    }
+
+    .manifesto::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--gold-dim));
+    }
+
+    .manifesto-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text);
+      max-width: 760px;
+      margin: 0 auto 32px;
+      line-height: 1.3;
+    }
+
+    .manifesto-attr {
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how {
+      padding: 100px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 48px;
+      margin-top: 64px;
+    }
+
+    .step {
+      position: relative;
+    }
+
+    .step-line {
+      position: absolute;
+      top: 16px;
+      right: -24px;
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(to right, var(--gold-dim), transparent);
+    }
+
+    .step-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      color: var(--gold);
+      opacity: 0.3;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .step-title {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .step-body {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── CTA FINAL ── */
+    .cta-section {
+      padding: 120px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 240px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+    }
+
+    .cta-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .cta-title em { font-style: italic; color: var(--gold); }
+
+    .cta-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 48px;
+    }
+
+    .store-badges {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      border-radius: 4px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--surface);
+    }
+
+    .store-badge:hover { border-color: var(--gold-dim); background: var(--gold-glow); }
+
+    .store-icon { font-size: 1.4rem; }
+
+    .store-info { text-align: left; }
+
+    .store-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: block;
+    }
+
+    .store-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .launch-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: gap;
+      gap: 24px;
+    }
+
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--gold); }
+
+    .footer-copy {
+      font-size: 0.72rem;
+      color: var(--subtle);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      .features, .how { padding: 72px 20px; }
+      .manifesto { padding: 80px 20px; }
+      .mockup-section { gap: 16px; }
+      .phone { width: 155px; height: 310px; }
+      footer { flex-direction: column; align-items: flex-start; }
+      .step-line { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .phone:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Nexo</a>
+  <a href="#descargar" class="nav-cta">Descargar</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <p class="hero-eyebrow">Barcelona · 2026</p>
+  <h1 class="hero-title">Conoce a <em>alguien</em><br>de verdad.</h1>
+  <p class="hero-sub">No somos otra app de swipe. Nexo conecta a personas que de verdad encajan — sin algoritmos de engagement, sin mecánicas de casino.</p>
+  <div class="hero-actions">
+    <a href="#descargar" class="btn-primary">
+      <span>Descarga Nexo</span>
+    </a>
+    <a href="#como-funciona" class="btn-secondary">Cómo funciona</a>
+  </div>
+</section>
+
+<!-- MOCKUPS -->
+<section class="mockup-section">
+  <!-- Phone 1: Discover -->
+  <div class="phone reveal">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="phone-header">Descubrir</div>
+      <div class="phone-card">
+        <div class="phone-avatar">👤</div>
+        <div class="phone-compat">94% compatible</div>
+        <div class="phone-name">Andrea, 27</div>
+        <div class="phone-actions">
+          <div class="phone-btn">✕</div>
+          <div class="phone-btn gold">♥</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone 2: Chat (center, elevated) -->
+  <div class="phone reveal" style="animation-delay:0.15s">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="phone-header">Conexiones</div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;padding-bottom:8px;">
+        <div class="chat-bubble them">Hola! Vi que también te gusta escalar 🧗</div>
+        <div class="chat-bubble me">¡Sí! ¿Sueles ir al rocódromo?</div>
+        <div class="chat-bubble them">Cada semana. Podríamos quedar</div>
+        <div style="background:var(--gold-glow);border:1px solid var(--gold-dim);border-radius:8px;padding:6px 10px;text-align:center;font-size:0.5rem;color:var(--gold);margin-top:4px;">✨ Nexo Date activado</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phone 3: Test -->
+  <div class="phone reveal" style="animation-delay:0.3s">
+    <div class="phone-notch"></div>
+    <div class="phone-screen">
+      <div class="phone-header">Test · 2 / 3</div>
+      <div style="height:2px;background:var(--border);border-radius:1px;margin-bottom:20px;">
+        <div style="width:66%;height:100%;background:var(--gold);border-radius:1px;"></div>
+      </div>
+      <div style="font-size:0.55rem;color:var(--muted);margin-bottom:12px;">¿Cómo gestionas los conflictos?</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="padding:7px 10px;border:1px solid var(--gold-dim);border-radius:6px;font-size:0.5rem;color:var(--gold);background:var(--gold-glow);">Hablo directamente</div>
+        <div style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.5rem;color:var(--muted);">Necesito tiempo</div>
+        <div style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.5rem;color:var(--muted);">Depende del contexto</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <p class="section-eyebrow reveal">Lo que nos diferencia</p>
+  <h2 class="section-title reveal">Diseñado para que<br><em>dejes de usarlo</em> pronto.</h2>
+
+  <div class="features-grid">
+    <div class="feature reveal">
+      <div class="feature-num">01</div>
+      <div class="feature-title">Test de compatibilidad real</div>
+      <div class="feature-body">12 minutos que valen más que 1.000 swipes. Nuestro algoritmo analiza valores, estilo de vida y comunicación para calcular tu compatibilidad real con cada persona.</div>
+    </div>
+    <div class="feature reveal">
+      <div class="feature-num">02</div>
+      <div class="feature-title">Matches con caducidad</div>
+      <div class="feature-body">Si en 72 horas ninguno inicia una conversación real, el match desaparece. Sin acumulación pasiva. Sin coleccionar personas.</div>
+    </div>
+    <div class="feature reveal">
+      <div class="feature-num">03</div>
+      <div class="feature-title">Nexo Date</div>
+      <div class="feature-body">La IA detecta cuando hay conexión real y propone quedar a cada persona por separado y en privado. Si los dos dicen sí → Nexo Date. Si uno dice no → nadie se entera.</div>
+    </div>
+    <div class="feature reveal">
+      <div class="feature-num">04</div>
+      <div class="feature-title">Cierre educado</div>
+      <div class="feature-body">En lugar de ghosting, Nexo te da una opción: cerrar la conversación con un mensaje respetuoso. Porque las personas merecen un mínimo de consideración.</div>
+    </div>
+  </div>
+</section>
+
+<!-- MANIFESTO -->
+<section class="manifesto">
+  <blockquote class="manifesto-quote reveal">
+    "El éxito de Nexo se mide en conexiones reales, no en tiempo de pantalla."
+  </blockquote>
+  <p class="manifesto-attr reveal">Nexo · Barcelona, 2026</p>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="como-funciona">
+  <p class="section-eyebrow reveal">El proceso</p>
+  <h2 class="section-title reveal">Cuatro pasos hacia<br><em>alguien que importa.</em></h2>
+
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-line"></div>
+      <div class="step-num">01</div>
+      <div class="step-title">Crea tu perfil</div>
+      <div class="step-body">Fotos, bio y lo que buscas. Sin trucos de gamificación ni boosts de pago.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-line"></div>
+      <div class="step-num">02</div>
+      <div class="step-title">Completa el test</div>
+      <div class="step-body">12 minutos sobre quién eres y qué buscas de verdad. Es la base de todo.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-line"></div>
+      <div class="step-num">03</div>
+      <div class="step-title">Descubre perfiles</div>
+      <div class="step-body">Ordenados por compatibilidad real. Los primeros son los que más encajan contigo.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">04</div>
+      <div class="step-title">Queda en persona</div>
+      <div class="step-body">El objetivo de Nexo es que lo dejes de necesitar. Una cita real. Una conexión que importa.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section" id="descargar">
+  <h2 class="cta-title reveal">Empieza a<br><em>conectar.</em></h2>
+  <p class="cta-sub reveal">Disponible en Android e iOS. Lanzamiento junio 2026 en Barcelona.</p>
+
+  <div class="store-badges reveal">
+    <a href="#" class="store-badge">
+      <span class="store-icon">▶</span>
+      <span class="store-info">
+        <span class="store-label">Disponible en</span>
+        <span class="store-name">Google Play</span>
+      </span>
+    </a>
+    <a href="#" class="store-badge">
+      <span class="store-icon"></span>
+      <span class="store-info">
+        <span class="store-label">Disponible en</span>
+        <span class="store-name">App Store</span>
+      </span>
+    </a>
+  </div>
+
+  <p class="launch-note reveal">· Junio 2026 · Barcelona ·</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Nexo</span>
+  <ul class="footer-links">
+    <li><a href="https://nexoapp-dating.github.io/nexo-legal/privacy.html">Privacidad</a></li>
+    <li><a href="https://nexoapp-dating.github.io/nexo-legal/terms.html">Términos</a></li>
+    <li><a href="mailto:privacidad@nexoapp.com">Contacto</a></li>
+  </ul>
+  <span class="footer-copy">© 2026 Nexo. Todos los derechos reservados.</span>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
